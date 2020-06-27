@@ -61,4 +61,25 @@ router.get('/edit/:id', ensureAuth, async (req, res) => {
     }
 })
 
+// @desc        Update log
+// @ route      PUT /logs/:id
+router.put('/:id', ensureAuth, async (req, res) => {
+    let log = await Log.findById(req.params.id).lean()
+
+    if (!log) {
+        return res.render('error/404')
+    } else {
+        if(log.user != req.user.id) {
+            res.redirect('/logs')
+        } else {
+            log = await Log.findByIdAndUpdate({ _id: req.params.id }, req.body, {
+                new: true,
+                runValidators: true
+            })
+
+            res.redirect('/dashboard')
+        }
+    }
+})
+
 module.exports = router
