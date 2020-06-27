@@ -23,4 +23,22 @@ router.post('/', ensureAuth, async (req, res) => {
     }
 })
 
+// @desc        Show all logs
+// @ route      GET /logs
+router.get('/', ensureAuth, async (req, res) => {
+    try {
+        const logs = await Log.find({ status: 'public' })
+            .populate('user')
+            .sort({ createdAt: 'desc' })
+            .lean()
+
+            res.render('logs/index', {
+                logs,
+            })
+    } catch (err) {
+        console.log(err)
+        res.render('error/500')
+    }
+})
+
 module.exports = router
