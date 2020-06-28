@@ -10,6 +10,7 @@ router.get('/add', ensureAuth, (req, res) => {
     res.render('logs/add')
 })
 
+
 // @desc        Process add form
 // @ route      POST /logs
 router.post('/', ensureAuth, async (req, res) => {
@@ -41,35 +42,66 @@ router.get('/', ensureAuth, async (req, res) => {
     }
 })
 
+// @desc        Show single log
+// @ route      GET /logs/:id
+router.get('/:id', ensureAuth, async (req, res) => {
+    try {
+        let log = await Log.findById(req.params.id)
+        .populate('user')
+        .lean()
+
+        if (!log) {
+            return res.render('error/404')
+        }
+
+        res.render('logs/show', {
+            log
+        })
+    } catch (err) {
+        console.error(err)
+        res.render('error/404')
+    }
+})
+
 // @desc        Show edit page
 // @ route      GET /logs/edit/:id
 router.get('/edit/:id', ensureAuth, async (req, res) => {
-    const log = await Log.findOne({
-        _id: req.params.id
-    }).lean()
-
-    if (!log) {
-        return res.render('error/404')
+    try {
+        const log = await Log.findOne({
+            _id: req.params.id
+        }).lean()
+    
+        if (!log) {
+            return res.render('error/404')
+        }
+    
+        if(log.user != req.user.id) {
+            res.redirect('/logs')
+        } else {
+            res.render('logs/edit', {
+                log,
+            })
+        }
+    } catch (err) {
+        console.error(err)
+        return res.render('error/500')
     }
 
-    if(log.user != req.user.id) {
-        res.redirect('/logs')
-    } else {
-        res.render('logs/edit', {
-            log,
-        })
-    }
+
+    
 })
 
 // @desc        Update log
 // @ route      PUT /logs/:id
 router.put('/:id', ensureAuth, async (req, res) => {
-    let log = await Log.findById(req.params.id).lean()
+    try {
+        let log = await Log.findById(req.params.id).lean()
 
     if (!log) {
         return res.render('error/404')
-    } else {
-        if(log.user != req.user.id) {
+    } 
+    
+    if (log.user != req.user.id) {
             res.redirect('/logs')
         } else {
             log = await Log.findByIdAndUpdate({ _id: req.params.id }, req.body, {
@@ -79,6 +111,22 @@ router.put('/:id', ensureAuth, async (req, res) => {
 
             res.redirect('/dashboard')
         }
+    } catch (err) {
+        console.error(err)
+        return res.render('error/500')
+
+    }
+})
+
+// @desc        DELETE log
+// @ route      DELETE /logs/:id
+router.delete('/:id', ensureAuth, async (req, res) => {
+    try {
+        await Log.remove({ _id: req.params.id })
+        res.redirect('/dashboard')
+    } catch (err) {
+        console.error(err)
+        return res.render('error/500')
     }
 })
 
